@@ -1,7 +1,60 @@
 <script setup lang="ts">
+import { useAuthStore } from '@/stores/auth'
+
 definePageMeta({
   layout: 'default'
 })
+
+const router = useRouter()
+const toast = useToast()
+const authStore = useAuthStore()
+
+const form = ref({
+  email: '',
+  password: ''
+})
+
+const isLoading = ref(false)
+
+const handleSubmit = async () => {
+  try {
+    isLoading.value = true
+    const user = await authStore.login(form.value.email, form.value.password)
+    
+    toast.add({
+      title: 'Успешный вход',
+      description: `Добро пожаловать, ${user.firstName}!`,
+      color: 'success'
+    })
+
+    router.push('/')
+  } catch (error: any) {
+    toast.add({
+      title: 'Ошибка',
+      description: error.message,
+      color: 'error'
+    })
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const handleShikimoriLogin = async () => {
+  try {
+    const response = await fetch('http://localhost:5001/api/auth/shikimori/login')
+    if (!response.ok) {
+      throw new Error('Ошибка при перенаправлении на Shikimori')
+    }
+    // Перенаправляем на страницу авторизации Shikimori
+    window.location.href = response.url
+  } catch (error: any) {
+    toast.add({
+      title: 'Ошибка',
+      description: error.message,
+      color: 'error'
+    })
+  }
+}
 </script>
 
 <template>
@@ -17,7 +70,7 @@ definePageMeta({
       </div>
       <div class="flex flex-1 items-center justify-center">
         <div class="w-full max-w-md">
-          <form class="flex flex-col gap-6">
+          <form @submit.prevent="handleSubmit" class="flex flex-col gap-6">
             <div class="flex flex-col items-center gap-2 text-center">
               <h1 class="text-2xl font-bold">
                 Вход в аккаунт
@@ -30,6 +83,7 @@ definePageMeta({
               <div class="grid gap-2">
                 <UFormGroup label="Email">
                   <UInput
+                    v-model="form.email"
                     class="w-full"
                     id="email"
                     type="email"
@@ -41,29 +95,28 @@ definePageMeta({
               <div class="grid gap-2">
                 <UFormGroup label="Пароль">
                   <UInput
-                  class="w-full"
+                    v-model="form.password"
+                    class="w-full"
                     id="password"
                     type="password"
                     placeholder="********"
                     required
                   />
                 </UFormGroup>
-
               </div>
 
               <UButton
                 type="submit"
                 color="primary"
                 block
+                :loading="isLoading"
+                :disabled="isLoading"
               >
                 Войти
               </UButton>
               <div class="relative text-center text-sm">
-                <div class="absolute inset-0 flex items-center">
-                  <div class="w-full border-t border-gray-200" />
-                </div>
                 <div class="relative flex justify-center">
-                  <span class="bg-white px-2 text-gray-500">
+                  <span class="px-2 text-gray-500">
                     Или продолжить с
                   </span>
                 </div>
@@ -72,6 +125,9 @@ definePageMeta({
                 color="neutral"
                 variant="outline"
                 block
+                @click="handleShikimoriLogin"
+                :loading="isLoading"
+                :disabled="isLoading"
               >
                 <template #leading>
                   <Icon name="simple-icons:shikimori" class="h-5 w-5" />

@@ -3,12 +3,14 @@ export const description = 'A simple email-only login page.'
 </script>
 
 <script setup lang="ts">
-import LoginForm from '@/components/restore.vue'
 import { ref } from 'vue'
 
 definePageMeta({
   layout: 'default'
 })
+
+const router = useRouter()
+const toast = useToast()
 
 const email = ref('')
 const isLoading = ref(false)
@@ -16,10 +18,34 @@ const isLoading = ref(false)
 const handleSubmit = async () => {
   try {
     isLoading.value = true
-    // Здесь будет логика отправки формы
-    console.log('Email для восстановления:', email.value)
-  } catch (error) {
-    console.error('Ошибка при отправке формы:', error)
+    
+    const response = await fetch('http://localhost:5001/api/auth/forgot-password', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ email: email.value })
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.message || 'Ошибка при отправке инструкций')
+    }
+
+    toast.add({
+      title: 'Успешно',
+      description: 'Инструкции по восстановлению пароля отправлены на ваш email',
+      color: 'success'
+    })
+
+    // Перенаправляем на страницу входа
+    await router.push('/auth/login')
+  } catch (error: any) {
+    toast.add({
+      title: 'Ошибка',
+      description: error.message,
+      color: 'error'
+    })
   } finally {
     isLoading.value = false
   }
@@ -67,6 +93,7 @@ const handleSubmit = async () => {
                 color="primary"
                 block
                 :loading="isLoading"
+                :disabled="isLoading"
               >
                 Отправить инструкции
               </UButton>

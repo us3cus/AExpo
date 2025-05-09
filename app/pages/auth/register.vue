@@ -1,29 +1,47 @@
 <script setup lang="ts">
+import { useAuthStore } from '@/stores/auth'
+
 definePageMeta({
   layout: 'default'
 })
 
 const router = useRouter()
-const firstName = ref('')
-const lastName = ref('')
-const email = ref('')
-const password = ref('')
-const confirmPassword = ref('')
+const toast = useToast()
+const authStore = useAuthStore()
+
+const form = ref({
+  email: '',
+  password: '',
+  firstName: '',
+  lastName: ''
+})
+
 const isLoading = ref(false)
 
 const handleSubmit = async () => {
   try {
     isLoading.value = true
-    // Здесь будет логика регистрации
-    console.log('First Name:', firstName.value)
-    console.log('Last Name:', lastName.value)
-    console.log('Email:', email.value)
-    console.log('Password:', password.value)
+    const user = await authStore.register(
+      form.value.email,
+      form.value.password,
+      form.value.firstName,
+      form.value.lastName
+    )
     
-    // После успешной регистрации перенаправляем на страницу заполнения профиля
+    toast.add({
+      title: 'Успешная регистрация',
+      description: `Добро пожаловать, ${user.firstName}!`,
+      color: 'success'
+    })
+
+    // После успешной регистрации и входа перенаправляем на страницу заполнения профиля
     await router.push('/auth/complete-profile')
-  } catch (error) {
-    console.error('Ошибка при регистрации:', error)
+  } catch (error: any) {
+    toast.add({
+      title: 'Ошибка',
+      description: error.message,
+      color: 'error'
+    })
   } finally {
     isLoading.value = false
   }
@@ -56,29 +74,31 @@ const handleSubmit = async () => {
               <div class="grid grid-cols-2 gap-4">
                 <UFormGroup label="Имя">
                   <UInput
-                    v-model="firstName"
+                    v-model="form.firstName"
                     class="w-full"
                     id="firstName"
                     type="text"
                     placeholder="Иван"
                     required
+                    minlength="2"
                   />
                 </UFormGroup>
                 <UFormGroup label="Фамилия">
                   <UInput
-                    v-model="lastName"
+                    v-model="form.lastName"
                     class="w-full"
                     id="lastName"
                     type="text"
                     placeholder="Иванов"
                     required
+                    minlength="2"
                   />
                 </UFormGroup>
               </div>
               <div class="grid gap-2">
                 <UFormGroup label="Email">
                   <UInput
-                    v-model="email"
+                    v-model="form.email"
                     class="w-full"
                     id="email"
                     type="email"
@@ -90,12 +110,13 @@ const handleSubmit = async () => {
               <div class="grid gap-2">
                 <UFormGroup label="Пароль">
                   <UInput
-                    v-model="password"
+                    v-model="form.password"
                     class="w-full"
                     id="password"
                     type="password"
                     placeholder="********"
                     required
+                    minlength="6"
                   />
                 </UFormGroup>
               </div>
@@ -104,6 +125,7 @@ const handleSubmit = async () => {
                 color="primary"
                 block
                 :loading="isLoading"
+                :disabled="isLoading"
               >
                 Зарегистрироваться
               </UButton>
