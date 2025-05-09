@@ -3,6 +3,9 @@ definePageMeta({
   layout: 'default'
 })
 
+const router = useRouter()
+const firstName = ref('')
+const lastName = ref('')
 const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
@@ -12,8 +15,13 @@ const handleSubmit = async () => {
   try {
     isLoading.value = true
     // Здесь будет логика регистрации
+    console.log('First Name:', firstName.value)
+    console.log('Last Name:', lastName.value)
     console.log('Email:', email.value)
     console.log('Password:', password.value)
+    
+    // После успешной регистрации перенаправляем на страницу заполнения профиля
+    await router.push('/auth/complete-profile')
   } catch (error) {
     console.error('Ошибка при регистрации:', error)
   } finally {
@@ -27,8 +35,8 @@ const handleSubmit = async () => {
     <div class="flex flex-col gap-4 p-6 md:p-10">
       <div class="flex justify-center gap-2 md:justify-start">
         <NuxtLink to="/" class="flex items-center gap-2 font-medium">
-          <div class="flex h-6 w-6 items-center justify-center rounded-md bg-primary text-white">
-            <Icon name="i-heroicons-squares-2x2" class="h-4 w-4" />
+          <div class="flex h-10 w-10 items-center justify-center rounded-md bg-primary text-white">
+            <Icon name="vscode-icons:file-type-firebase" class="h-8 w-8" />
           </div>
           Æxpo
         </NuxtLink>
@@ -45,6 +53,28 @@ const handleSubmit = async () => {
               </p>
             </div>
             <div class="grid gap-6">
+              <div class="grid grid-cols-2 gap-4">
+                <UFormGroup label="Имя">
+                  <UInput
+                    v-model="firstName"
+                    class="w-full"
+                    id="firstName"
+                    type="text"
+                    placeholder="Иван"
+                    required
+                  />
+                </UFormGroup>
+                <UFormGroup label="Фамилия">
+                  <UInput
+                    v-model="lastName"
+                    class="w-full"
+                    id="lastName"
+                    type="text"
+                    placeholder="Иванов"
+                    required
+                  />
+                </UFormGroup>
+              </div>
               <div class="grid gap-2">
                 <UFormGroup label="Email">
                   <UInput
@@ -64,22 +94,11 @@ const handleSubmit = async () => {
                     class="w-full"
                     id="password"
                     type="password"
+                    placeholder="********"
                     required
                   />
                 </UFormGroup>
               </div>
-              <div class="grid gap-2">
-                <UFormGroup label="Подтвердите пароль">
-                  <UInput
-                    v-model="confirmPassword"
-                    class="w-full"
-                    id="confirm-password"
-                    type="password"
-                    required
-                  />
-                </UFormGroup>
-              </div>
-
               <UButton
                 type="submit"
                 color="primary"
@@ -103,7 +122,13 @@ const handleSubmit = async () => {
       </div>
     </div>
     <div class="relative hidden bg-gray-100 lg:block">
-      <Icon name="i-heroicons-squares-2x2" class="h-4 w-4" />
+      <div class="absolute inset-0">
+        <img 
+          src="/assets/imgs/placeholder.jpg" 
+          alt="Register" 
+          class="h-full w-full object-cover object-center"
+        />
+      </div>
     </div>
   </div>
 </template>

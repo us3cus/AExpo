@@ -31,11 +31,11 @@ const handleSubmit = async () => {
     <div class="flex flex-col gap-4 p-6 md:p-10">
       <div class="flex justify-center gap-2 md:justify-start">
         <NuxtLink to="/" class="flex items-center gap-2 font-medium">
-          <div class="flex h-6 w-6 items-center justify-center rounded-md bg-primary text-white">
-            <Icon name="i-heroicons-squares-2x2" class="h-4 w-4" />
-          </div>
-          Æxpo
-        </NuxtLink>
+            <div class="flex h-10 w-10 items-center justify-center rounded-md bg-primary text-white">
+              <Icon name="vscode-icons:file-type-firebase" class="h-8 w-8" />
+            </div>
+            Æxpo
+          </NuxtLink>
       </div>
       <div class="flex flex-1 items-center justify-center">
         <div class="w-full max-w-md">
@@ -84,7 +84,13 @@ const handleSubmit = async () => {
       </div>
     </div>
     <div class="relative hidden bg-gray-100 lg:block">
-      <Icon name="i-heroicons-squares-2x2" class="h-4 w-4" />
+        <div class="absolute inset-0">
+            <img 
+              src="/assets/imgs/placeholder.jpg" 
+              alt="Register" 
+              class="h-full w-full object-cover object-center"
+            />
+          </div>
     </div>
   </div>
 </template>
