@@ -1,9 +1,32 @@
 <template>
-  <div>
-    <li><NuxtLink to="auth/login">Login</NuxtLink></li>
+  <div class="container mx-auto p-4">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl font-bold">Главная страница</h1>
+      <div class="flex gap-2">
+        <UButton
+          v-if="auth.user"
+          :to="'/users/' + auth.user.id"
+          color="primary"
+          variant="soft"
+        >
+          Профиль
+        </UButton>
+        <UButton
+          v-else
+          to="/auth/login"
+          color="primary"
+        >
+          Войти
+        </UButton>
+      </div>
+    </div>
+    <!-- Остальной контент страницы -->
   </div>
 </template>
-<script lang="ts" setup>
 
+<script setup>
+import { useAuth } from '~/composables/useAuth'
+
+const auth = useAuth()
 </script>
 

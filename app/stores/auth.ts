@@ -113,8 +113,16 @@ export const useAuthStore = defineStore('auth', {
       const userCookie = useCookie('user')
 
       if (tokenCookie.value && userCookie.value) {
-        this.token = tokenCookie.value
-        this.user = JSON.parse(userCookie.value)
+        try {
+          this.token = tokenCookie.value
+          this.user = typeof userCookie.value === 'string' 
+            ? JSON.parse(userCookie.value)
+            : userCookie.value
+        } catch (error) {
+          console.error('Ошибка при инициализации auth store:', error)
+          // Очищаем невалидные куки
+          this.logout()
+        }
       }
     }
   }
