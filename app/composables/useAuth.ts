@@ -1,4 +1,5 @@
-import { ref } from 'vue'
+import { useAuthStore } from '@/stores/auth'
+import { computed } from 'vue'
 
 interface User {
   id: number
@@ -10,19 +11,11 @@ interface User {
 }
 
 export const useAuth = () => {
-  const user = ref<User | null>(null)
-
-  const setUser = (newUser: User | null) => {
-    user.value = newUser
-  }
-
-  const isAuthenticated = () => {
-    return !!user.value
-  }
+  const authStore = useAuthStore()
 
   return {
-    user,
-    setUser,
-    isAuthenticated
+    user: computed(() => authStore.user),
+    setUser: (user: any) => authStore.setUser(user),
+    isAuthenticated: () => authStore.isAuthenticated
   }
 } 

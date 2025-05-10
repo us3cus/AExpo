@@ -146,7 +146,7 @@ const handleSubmit = async () => {
     <div class="relative hidden bg-gray-100 lg:block">
       <div class="absolute inset-0">
         <img 
-          src="/assets/imgs/placeholder.jpg" 
+          src="/assets/images/placeholder.jpg" 
           alt="Register" 
           class="h-full w-full object-cover object-center"
         />

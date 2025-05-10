@@ -4,8 +4,8 @@
       <h1 class="text-2xl font-bold">Главная страница</h1>
       <div class="flex gap-2">
         <UButton
-          v-if="auth.user"
-          :to="'/users/' + auth.user.id"
+          v-if="auth.user.value"
+          :to="'/users/profile'"
           color="primary"
           variant="soft"
         >
