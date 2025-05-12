@@ -1,6 +1,6 @@
 <template>
     <div class="container mx-auto p-4">
-              <div class="flex justify-center gap-2 md:justify-start">
+        <div class="flex justify-center gap-2 md:justify-start">
         <NuxtLink to="/" class="mb-6 flex items-center gap-2 font-medium">
           <div class="flex h-10 w-10 items-center justify-center rounded-md bg-primary text-white">
             <Icon name="vscode-icons:file-type-firebase" class="h-8 w-8" />
@@ -12,15 +12,6 @@
         <template #header>
           <div class="flex items-center justify-between">
             <h1 class="text-2xl font-bold">Профиль пользователя</h1>
-            <div class="flex gap-2">
-              <UButton
-                color="red"
-                variant="soft"
-                @click="handleLogout"
-              >
-                Выйти
-              </UButton>
-            </div>
           </div>
         </template>
   
@@ -76,45 +67,37 @@
   
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useRoute } from '#app'
 import { useAuthStore } from '~/stores/auth'
-import { useRouter } from '#app'
-import { useFetch } from '#app'
+
+const route = useRoute()
+const authStore = useAuthStore()
 
 const user = ref(null)
 const loading = ref(true)
 
-const authStore = useAuthStore()
-const router = useRouter()
-
-const fetchUserData = async () => {
+const fetchUser = async () => {
   try {
-    const token = authStore.token // access_token должен быть в сторе
-    const { data, error } = await useFetch('http://localhost:5001/api/users/me', {
+    const userId = route.params.id
+
+    if (!userId) throw new Error("ID пользователя отсутствует.")
+
+    const response = await fetch(`http://localhost:5001/api/users/${userId}`, {
       headers: {
-        Authorization: `Bearer ${token}`
+        Authorization: `Bearer ${authStore.token}`
       }
     })
 
-    if (error.value) {
-      console.error('Ошибка при загрузке данных:', error.value)
-    } else {
-      user.value = data.value
-      console.log(data.value);
-    }
-  } catch (e) {
-    console.error('Ошибка запроса:', e)
+    if (!response.ok) throw new Error("Ошибка загрузки данных")
+
+    const result = await response.json()
+    user.value = result
+  } catch (error) {
+    console.error("Ошибка при загрузке пользователя:", error)
   } finally {
     loading.value = false
   }
 }
 
-onMounted(fetchUserData)
-
-const handleLogout = () => {
-  authStore.logout()
-  router.push('/')
-}
+onMounted(fetchUser)
 </script>
-
-
-  
