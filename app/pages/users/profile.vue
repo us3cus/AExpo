@@ -13,13 +13,18 @@
           <div class="flex items-center justify-between">
             <h1 class="text-2xl font-bold">Профиль пользователя</h1>
             <div class="flex gap-2">
-              <UButton
-                color="red"
-                variant="soft"
-                @click="handleLogout"
+              <UDropdownMenu
+                size="xl"
+                :items="items"
+                :content="{
+                  align: 'start'
+                }"
+                :ui="{
+                  content: 'w-48'
+                }"
               >
-                Выйти
-              </UButton>
+                <UButton size="xl" label="Open" icon="i-lucide-menu" color="neutral" variant="outline" />
+              </UDropdownMenu>
             </div>
           </div>
         </template>
@@ -108,11 +113,32 @@ const fetchUserData = async () => {
   }
 }
 
+const items = ref<DropdownMenuItem[]>([
+  {
+    label: 'Настройки',
+    icon: 'i-lucide-cog',
+    onSelect() {
+    handleSettings()
+    }
+  },  
+  {
+    label: 'Выйти',
+    icon: 'ep:setting',
+    onSelect() {
+    handleLogout()
+    }
+  },
+
+])
+
 onMounted(fetchUserData)
 
 const handleLogout = () => {
   authStore.logout()
   router.push('/')
+}
+const handleSettings = () => {
+  router.push('/users/settings')
 }
 </script>
 

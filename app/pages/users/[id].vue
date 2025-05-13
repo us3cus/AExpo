@@ -30,7 +30,7 @@
               <h2 class="text-3xl font-bold mb-2">{{ user?.firstName }} {{ user?.lastName }}</h2>
               <p class="text-xl">{{ user?.email }}</p>
               <div class="mt-2">
-                <UBadge v-if="user?.shikimoriId" color="green">
+                <UBadge v-if="user?.shikimoriId" color="success">
                   Shikimori: {{ user?.shikimoriId }}
                 </UBadge>
               </div>
@@ -70,10 +70,21 @@ import { ref, onMounted } from 'vue'
 import { useRoute } from '#app'
 import { useAuthStore } from '~/stores/auth'
 
+interface User {
+  avatarUrl?: string
+  firstName: string
+  lastName: string
+  email: string
+  shikimoriId?: string
+  followersCount: number
+  followingCount: number
+  animeListCount: number
+}
+
 const route = useRoute()
 const authStore = useAuthStore()
 
-const user = ref(null)
+const user = ref<User | null>(null)
 const loading = ref(true)
 
 const fetchUser = async () => {
@@ -87,6 +98,11 @@ const fetchUser = async () => {
         Authorization: `Bearer ${authStore.token}`
       }
     })
+
+    if (response.status === 404) {
+      navigateTo('/error')
+      return
+    }
 
     if (!response.ok) throw new Error("Ошибка загрузки данных")
 
