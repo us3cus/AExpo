@@ -5,6 +5,7 @@
         <div class="flex justify-between items-center">
           <h2 class="text-xl font-bold">Настройки профиля</h2>
           <UButton
+            v-if="isMounted"
             :icon="colorMode.value === 'dark' ? 'i-heroicons-moon' : 'i-heroicons-sun'"
             color="neutral"
             variant="ghost"
@@ -47,21 +48,24 @@
 
         <!-- Форма -->
         <form @submit.prevent="updateProfile" class="space-y-4">
-          <UFormGroup label="Имя">
+          <div class="space-y-1">
+            <label class="text-sm font-medium">Имя</label>
             <UInput v-model="form.firstName" placeholder="Введите имя" />
-          </UFormGroup>
+          </div>
 
-          <UFormGroup label="Фамилия">
+          <div class="space-y-1">
+            <label class="text-sm font-medium">Фамилия</label>
             <UInput v-model="form.lastName" placeholder="Введите фамилию" />
-          </UFormGroup>
+          </div>
 
-          <UFormGroup label="Новый пароль">
+          <div class="space-y-1">
+            <label class="text-sm font-medium">Новый пароль</label>
             <UInput
               v-model="form.password"
               type="password"
               placeholder="Введите новый пароль"
             />
-          </UFormGroup>
+          </div>
 
           <!-- Shikimori интеграция -->
           <div class="space-y-2">
@@ -109,6 +113,9 @@
 import { useAnimate } from '@vueuse/core'
 import { useColorMode } from '#imports'
 
+import { useAuthStore } from '~/stores/auth'
+const authStore = useAuthStore()
+
 const colorMode = useColorMode()
 const parent = ref<HTMLElement | null>(null)
 const { play } = useAnimate(parent, {
@@ -143,16 +150,17 @@ const toggleColorMode = () => {
 
 // Подключение Shikimori
 const connectShikimori = () => {
-  window.location.href = '/api/auth/shikimori/login'
+  window.location.href = 'http://localhost:5001/api/auth/shikimori/login'
 }
 
 // Отключение Shikimori
 const disconnectShikimori = async () => {
+  const token = authStore.token
   try {
-    const response = await fetch('/api/auth/shikimori/disconnect', {
+    const response = await fetch('http://localhost:5001/api/auth/shikimori/disconnect', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+        'Authorization': `Bearer ${token}`
       }
     })
     
@@ -176,12 +184,16 @@ const disconnectShikimori = async () => {
 
 // Загрузка данных пользователя
 const fetchUserData = async () => {
+  const token = authStore.token
   try {
-    const response = await fetch('/api/auth/profile', {
+    const response = await fetch('http://localhost:5001/api/auth/me', {
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+        'Authorization': `Bearer ${token}`
       }
     })
+    
+    if (!response.ok) throw new Error('Ошибка при загрузке данных пользователя')
+    
     const data = await response.json()
     user.value = data
     form.value = {
@@ -190,18 +202,23 @@ const fetchUserData = async () => {
       password: ''
     }
   } catch (error) {
-    console.error('Ошибка при загрузке данных пользователя:', error)
+    useToast().add({
+      title: 'Ошибка',
+      description: 'Не удалось загрузить данные пользователя',
+      color: 'error'
+    })
   }
 }
 
 // Обновление профиля
 const updateProfile = async () => {
+  const token = authStore.token
   loading.value = true
   try {
-    const response = await fetch('/api/auth/profile', {
+    const response = await fetch('http://localhost:5001/api/auth/profile', {
       method: 'PATCH',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(form.value)
@@ -235,6 +252,7 @@ const openFileInput = () => {
 }
 
 const handleAvatarUpload = async (event: Event) => {
+  const token = authStore.token // access_token должен быть в сторе
   const input = event.target as HTMLInputElement
   if (!input.files?.length) return
 
@@ -245,10 +263,10 @@ const handleAvatarUpload = async (event: Event) => {
   formData.append('file', file)
 
   try {
-    const response = await fetch('/api/upload/avatar', {
+    const response = await fetch('http://localhost:5001/api/upload/avatar', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+        Authorization: `Bearer ${token}`
       },
       body: formData
     })
@@ -271,9 +289,10 @@ const handleAvatarUpload = async (event: Event) => {
     })
   }
 }
-
+const isMounted = ref(false)
 // Загружаем данные при монтировании компонента
 onMounted(() => {
+  isMounted.value = true
   fetchUserData()
 })
 </script>
