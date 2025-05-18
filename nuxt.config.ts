@@ -4,7 +4,9 @@ export default defineNuxtConfig({
 
   modules: [
     '@nuxt/ui',
-    '@nuxt/eslint'
+    '@nuxt/eslint',
+    '@pinia/nuxt',
+    '@formkit/auto-animate'
   ],
 
   css: ['~/assets/css/main.css'],
