@@ -50,3 +50,15 @@ GET /api/auth/shikimori
 POST /api/auth/logout
 ```
 Выход из системы и очистка данных сессии. 
+## Посты
+
+### Создание поста
+```
+POST /api/posts
+Content-Type: application/json
+```
+Создает новый пост.
+Параметры:
+- content: текст поста
+
+Возвращает созданный пост с его данными.
