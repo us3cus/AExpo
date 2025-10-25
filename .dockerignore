@@ -1,0 +1,39 @@
+# Node modules
+node_modules
+npm-debug.log
+
+# Nuxt build outputs
+.nuxt
+.output
+.data
+.cache
+dist
+
+# Logs
+logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode
+.idea
+.fleet
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Git
+.git
+.gitignore
+
+# CI/CD
+.github
+
+# Documentation
+README.md
+API.md
