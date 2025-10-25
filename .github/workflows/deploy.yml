@@ -34,6 +34,7 @@ jobs:
           find .output -type f | head -20 || echo "No .output directory"
           echo "Looking for index.html:"
           find .output -name "index.html" || echo "No index.html found"
+<<<<<<< HEAD
           echo "Content of .output/public:"
           ls -la .output/public/ 2>/dev/null || echo "Cannot list .output/public"
       
@@ -44,6 +45,8 @@ jobs:
           cd ../..
           echo "Archive created:"
           tar -tzf deploy.tar.gz | head -20
+=======
+>>>>>>> 312a95be04db5796532a0f16337df04d258cc9cf
       
       - name: Deploy to VPS
         uses: appleboy/scp-action@v0.1.7
@@ -52,8 +55,15 @@ jobs:
           username: ${{ vars.VPS_USERNAME }}
           password: ${{ secrets.VPS_PASSWORD }}
           port: ${{ vars.VPS_PORT || 22 }}
+<<<<<<< HEAD
           source: "deploy.tar.gz"
           target: "/tmp/"
+=======
+          source: ".output/public/*"
+          target: "/var/www/temten.me/"
+          strip_components: 0
+          rm: false
+>>>>>>> 312a95be04db5796532a0f16337df04d258cc9cf
           overwrite: true
       
       - name: Extract and set permissions
@@ -64,6 +74,7 @@ jobs:
           password: ${{ secrets.VPS_PASSWORD }}
           port: ${{ vars.VPS_PORT || 22 }}
           script: |
+<<<<<<< HEAD
             echo "Extracting files..."
             sudo mkdir -p /var/www/temten.me
             cd /var/www/temten.me
@@ -87,6 +98,28 @@ jobs:
             sudo find /var/www/temten.me -type f -exec chmod 644 {} \;
             
             echo "Reloading web server..."
+=======
+            echo "Files structure:"
+            ls -la /var/www/temten.me/
+            echo "Looking for index.html:"
+            find /var/www/temten.me -name "index.html"
+            
+            # Move files from .output/public to root if needed
+            if [ -d "/var/www/temten.me/.output/public" ]; then
+              echo "Moving files from .output/public to root..."
+              sudo mv /var/www/temten.me/.output/public/* /var/www/temten.me/
+              sudo rm -rf /var/www/temten.me/.output
+            fi
+            
+            cd /var/www/temten.me
+            sudo chown -R www-data:www-data .
+            sudo chmod -R 755 .
+            sudo find . -type f -exec chmod 644 {} \;
+            
+            echo "Final structure:"
+            ls -la /var/www/temten.me/ | head -15
+            
+>>>>>>> 312a95be04db5796532a0f16337df04d258cc9cf
             sudo systemctl reload nginx || sudo systemctl reload apache2 || true
             
             echo "✅ Deployment completed!"
