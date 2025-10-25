@@ -32,6 +32,18 @@ jobs:
           echo "Checking build output..."
           ls -la .output/public || echo "No .output/public directory"
           find .output -type f | head -20 || echo "No .output directory"
+          echo "Looking for index.html:"
+          find .output -name "index.html" || echo "No index.html found"
+          echo "Content of .output/public:"
+          ls -la .output/public/ 2>/dev/null || echo "Cannot list .output/public"
+      
+      - name: Create deployment archive
+        run: |
+          cd .output/public
+          tar -czf ../../deploy.tar.gz .
+          cd ../..
+          echo "Archive created:"
+          tar -tzf deploy.tar.gz | head -20
       
       - name: Deploy to VPS
         uses: appleboy/scp-action@v0.1.7
@@ -40,13 +52,11 @@ jobs:
           username: ${{ vars.VPS_USERNAME }}
           password: ${{ secrets.VPS_PASSWORD }}
           port: ${{ vars.VPS_PORT || 22 }}
-          source: ".output/public/"
-          target: "/var/www/temten.me"
-          strip_components: 2
-          rm: false
+          source: "deploy.tar.gz"
+          target: "/tmp/"
           overwrite: true
       
-      - name: Set correct permissions and restart
+      - name: Extract and set permissions
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -54,10 +64,29 @@ jobs:
           password: ${{ secrets.VPS_PASSWORD }}
           port: ${{ vars.VPS_PORT || 22 }}
           script: |
+            echo "Extracting files..."
+            sudo mkdir -p /var/www/temten.me
             cd /var/www/temten.me
-            sudo chown -R www-data:www-data .
-            sudo chmod -R 755 .
-            sudo find . -type f -exec chmod 644 {} \;
+            sudo tar -xzf /tmp/deploy.tar.gz
+            sudo rm /tmp/deploy.tar.gz
+            
+            echo "Files extracted:"
+            ls -la /var/www/temten.me/ | head -20
+            
+            echo "Checking for index.html:"
+            if [ -f "/var/www/temten.me/index.html" ]; then
+              echo "✅ index.html found!"
+            else
+              echo "❌ index.html NOT found!"
+              find /var/www/temten.me -name "index.html"
+            fi
+            
+            echo "Setting permissions..."
+            sudo chown -R www-data:www-data /var/www/temten.me
+            sudo chmod -R 755 /var/www/temten.me
+            sudo find /var/www/temten.me -type f -exec chmod 644 {} \;
+            
+            echo "Reloading web server..."
             sudo systemctl reload nginx || sudo systemctl reload apache2 || true
-            echo "Deployment completed. Files in /var/www/temten.me:"
-            ls -la /var/www/temten.me | head -10
+            
+            echo "✅ Deployment completed!"
