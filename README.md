@@ -1,5 +1,7 @@
 AExpo — это веб приложение на базе Nuxt.js, имеющее функционал социальной сети.
 
+[![CI/CD Pipeline](https://github.com/us3cus/AExpo/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/us3cus/AExpo/actions/workflows/ci-cd.yml)
+
 Функционал:
   
   Создание профиля
