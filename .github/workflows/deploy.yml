@@ -32,6 +32,8 @@ jobs:
           echo "Checking build output..."
           ls -la .output/public || echo "No .output/public directory"
           find .output -type f | head -20 || echo "No .output directory"
+          echo "Looking for index.html:"
+          find .output -name "index.html" || echo "No index.html found"
       
       - name: Deploy to VPS
         uses: appleboy/scp-action@v0.1.7
@@ -40,9 +42,9 @@ jobs:
           username: ${{ vars.VPS_USERNAME }}
           password: ${{ secrets.VPS_PASSWORD }}
           port: ${{ vars.VPS_PORT || 22 }}
-          source: ".output/public/"
-          target: "/var/www/temten.me"
-          strip_components: 2
+          source: ".output/public/*"
+          target: "/var/www/temten.me/"
+          strip_components: 0
           rm: false
           overwrite: true
       
@@ -54,10 +56,26 @@ jobs:
           password: ${{ secrets.VPS_PASSWORD }}
           port: ${{ vars.VPS_PORT || 22 }}
           script: |
+            echo "Files structure:"
+            ls -la /var/www/temten.me/
+            echo "Looking for index.html:"
+            find /var/www/temten.me -name "index.html"
+            
+            # Move files from .output/public to root if needed
+            if [ -d "/var/www/temten.me/.output/public" ]; then
+              echo "Moving files from .output/public to root..."
+              sudo mv /var/www/temten.me/.output/public/* /var/www/temten.me/
+              sudo rm -rf /var/www/temten.me/.output
+            fi
+            
             cd /var/www/temten.me
             sudo chown -R www-data:www-data .
             sudo chmod -R 755 .
             sudo find . -type f -exec chmod 644 {} \;
+            
+            echo "Final structure:"
+            ls -la /var/www/temten.me/ | head -15
+            
             sudo systemctl reload nginx || sudo systemctl reload apache2 || true
             echo "Deployment completed. Files in /var/www/temten.me:"
             ls -la /var/www/temten.me | head -10
