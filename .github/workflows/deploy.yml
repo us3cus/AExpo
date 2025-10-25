@@ -26,15 +26,18 @@ jobs:
       - name: Build project
         run: npm run build
       
+      - name: Verify build output
+        run: ls -la .output/public
+      
       - name: Deploy to VPS
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
           password: ${{ secrets.VPS_PASSWORD }}
-          source: "dist/*"
+          source: ".output/public/*"
           target: "/var/www/temten.me/"
-          strip_components: 1
+          strip_components: 2
           rm: true
       
       - name: Restart web server (optional)
