@@ -171,12 +171,17 @@ HOST=0.0.0.0
 PORT=3000
 ```
 
-Optional (based on features):
+Optional (based on features used):
 ```bash
+# AWS S3 (only if using S3 for file uploads)
 AWS_ACCESS_KEY_ID=xxx
 AWS_SECRET_ACCESS_KEY=xxx
 AWS_REGION=us-east-1
 S3_BUCKET_NAME=xxx
+
+# Database (only if backend integration is configured)
+# DATABASE_URL=xxx
+# MONGODB_URI=xxx
 ```
 
 ## GitHub Secrets Required
@@ -192,7 +197,15 @@ For automatic deployment:
 
 ### First-time VPS Setup
 ```bash
-curl -fsSL https://raw.githubusercontent.com/us3cus/AExpo/main/setup-vps.sh | bash
+# Download the script
+wget https://raw.githubusercontent.com/us3cus/AExpo/main/setup-vps.sh
+
+# Review the script (recommended)
+cat setup-vps.sh
+
+# Make it executable and run
+chmod +x setup-vps.sh
+./setup-vps.sh
 ```
 
 ### Deploy Application
@@ -227,7 +240,7 @@ docker compose ps
 
 After implementation:
 - ✅ Application builds successfully
-- ✅ Docker image is ~100MB (compressed)
+- ✅ Optimized Docker image size
 - ✅ Deployment takes ~2-3 minutes
 - ✅ Zero manual steps after initial setup
 - ✅ Automatic rollout on git push

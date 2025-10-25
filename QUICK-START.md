@@ -15,7 +15,15 @@ This project includes a complete CI/CD pipeline for deploying AExpo to your VPS.
 
 2. **Run setup script**
    ```bash
-   curl -fsSL https://raw.githubusercontent.com/us3cus/AExpo/main/setup-vps.sh | bash
+   # Download the script
+   wget https://raw.githubusercontent.com/us3cus/AExpo/main/setup-vps.sh
+   
+   # Review it (recommended)
+   cat setup-vps.sh
+   
+   # Make executable and run
+   chmod +x setup-vps.sh
+   ./setup-vps.sh
    ```
 
 3. **Configure environment**
