@@ -1,4 +1,4 @@
-name: Deploy to VPS
+name: Deploy to VPS (SSR)
 
 on:
   push:
@@ -24,24 +24,21 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
-      - name: Build project
+      - name: Build project for SSR
         run: npm run build
+        env:
+          NITRO_PRESET: node-server
       
       - name: Verify build output
         run: |
           echo "Checking build output..."
-          ls -la .output/public || echo "No .output/public directory"
-          find .output -type f | head -20 || echo "No .output directory"
-          echo "Looking for index.html:"
-          find .output -name "index.html" || echo "No index.html found"
-          echo "Content of .output/public:"
-          ls -la .output/public/ 2>/dev/null || echo "Cannot list .output/public"
+          ls -la .output || echo "No .output directory"
+          echo "Server entry point:"
+          ls -la .output/server/index.mjs 2>/dev/null || echo "No server entry found"
       
       - name: Create deployment archive
         run: |
-          cd .output/public
-          tar -czf ../../deploy.tar.gz .
-          cd ../..
+          tar -czf deploy.tar.gz .output package.json package-lock.json ecosystem.config.cjs
           echo "Archive created:"
           tar -tzf deploy.tar.gz | head -20
       
@@ -56,7 +53,7 @@ jobs:
           target: "/tmp/"
           overwrite: true
       
-      - name: Extract and set permissions
+      - name: Extract and restart application
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -64,29 +61,38 @@ jobs:
           password: ${{ secrets.VPS_PASSWORD }}
           port: ${{ vars.VPS_PORT || 22 }}
           script: |
-            echo "Extracting files..."
+            echo "Preparing deployment directory..."
             sudo mkdir -p /var/www/temten.me
             cd /var/www/temten.me
+            
+            echo "Extracting files..."
             sudo tar -xzf /tmp/deploy.tar.gz
             sudo rm /tmp/deploy.tar.gz
             
             echo "Files extracted:"
-            ls -la /var/www/temten.me/ | head -20
-            
-            echo "Checking for index.html:"
-            if [ -f "/var/www/temten.me/index.html" ]; then
-              echo "✅ index.html found!"
-            else
-              echo "❌ index.html NOT found!"
-              find /var/www/temten.me -name "index.html"
-            fi
+            ls -la /var/www/temten.me/
             
             echo "Setting permissions..."
-            sudo chown -R www-data:www-data /var/www/temten.me
-            sudo chmod -R 755 /var/www/temten.me
-            sudo find /var/www/temten.me -type f -exec chmod 644 {} \;
+            sudo chown -R $USER:$USER /var/www/temten.me
             
-            echo "Reloading web server..."
-            sudo systemctl reload nginx || sudo systemctl reload apache2 || true
+            echo "Checking Node.js and PM2..."
+            node --version
+            npm --version
+            
+            echo "Installing/updating PM2..."
+            sudo npm install -g pm2
+            
+            echo "Stopping old process..."
+            pm2 stop temten-app || true
+            pm2 delete temten-app || true
+            
+            echo "Starting application with PM2..."
+            cd /var/www/temten.me
+            pm2 start ecosystem.config.cjs
+            pm2 save
+            
+            echo "PM2 status:"
+            pm2 list
+            pm2 logs temten-app --lines 50 --nostream
             
             echo "✅ Deployment completed!"

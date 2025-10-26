@@ -12,6 +12,15 @@ node_modules
 # Logs
 logs
 *.log
+logs/
+*.log
+
+# PM2 logs
+logs/
+*.log
+
+# Deployment
+deploy.tar.gz
 
 # Misc
 .DS_Store
