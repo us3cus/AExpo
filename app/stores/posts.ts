@@ -21,23 +21,12 @@ export const usePostsStore = defineStore('posts', {
       const authStore = useAuthStore()
       const token = authStore.getToken
 
-      const response = await fetch('http://localhost:5001/api/posts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ content })
-      })
+      const api = useApi()
 
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || 'Ошибка при создании поста')
-      }
+      const response = await api.post<Post>('/posts', { content, headers: { Authorization: `Bearer ${token}` } })
 
-      const post = await response.json()
-      this.posts.unshift(post)
-      return post
+      this.posts.unshift(response.data)
+      return response.data
     }
   }
 })
