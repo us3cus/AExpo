@@ -67,9 +67,9 @@
             </UCard>
             <UCard>
               <template #header>
-                <div class="text-center font-medium">Аниме в списке</div>
+                <div class="text-center font-medium">Количество постов</div>
               </template>
-              <div class="text-center text-2xl font-bold">{{ user?.animeListCount || 0 }}</div>
+              <div class="text-center text-2xl font-bold">{{ user?.postCount || 0 }}</div>
             </UCard>
           </div>
   
