@@ -28,10 +28,10 @@ const handleSubmit = async () => {
     })
 
     router.push('/')
-  } catch (error) {
+  } catch (error: any) {
     toast.add({
       title: 'Ошибка',
-      description: error instanceof Error ? error.message : 'Произошла ошибка',
+      description: error.response?.data?.message || error.message || 'Произошла ошибка',
       color: 'error'
     })
   } finally {

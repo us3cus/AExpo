@@ -22,10 +22,6 @@
           <UInput type="file" @change="onAvatarChange" accept="image/*" />
         </UFormGroup>
 
-        <UButton color="primary" @click="connectShikimori">
-          Привязать аккаунт Shikimori
-        </UButton>
-
         <UButton color="neutral" @click="finishRegistration">
           Закончить регистрацию
         </UButton>
@@ -40,6 +36,7 @@ const avatarPreview = ref<string | null>(null)
 const selectedFile = ref<File | null>(null)
 const toast = useToast()
 const authStore = useAuthStore()
+const api = useApi()
 
 const onAvatarChange = (event: Event) => {
   const file = (event.target as HTMLInputElement).files?.[0]
@@ -81,41 +78,28 @@ const uploadAvatar = async () => {
     const formData = new FormData()
     formData.append('file', selectedFile.value)
 
-    const response = await fetch('http://localhost:5001/api/upload/avatar', {
-      method: 'POST',
-      body: formData,
+    const response = await api.post('/upload/avatar', formData, {
       headers: {
-        'Authorization': `Bearer ${authStore.getToken}`
+        'Content-Type': 'multipart/form-data'
       }
     })
 
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.message || 'Ошибка при загрузке аватара')
-    }
-
-    const data = await response.json()
     toast.add({
       title: 'Успешно',
       description: 'Аватар успешно загружен',
       color: 'success'
     })
-    return data.url
+    return response.data.url
   } catch (error: any) {
     toast.add({
       title: 'Ошибка',
-      description: error.message || 'Ошибка при загрузке аватара',
+      description: error.response?.data?.message || 'Ошибка при загрузке аватара',
       color: 'error'
     })
     console.error('Error uploading avatar:', error)
     return null
   }
 }
-
-const connectShikimori = () => {
-  window.location.href = 'http://localhost:5001/api/auth/shikimori/login'
-}
-
 const finishRegistration = async () => {
   if (selectedFile.value) {
     const avatarUrl = await uploadAvatar()
@@ -126,4 +110,3 @@ const finishRegistration = async () => {
   router.push('/')
 }
 </script>
-  

@@ -18,12 +18,9 @@ export const usePostsStore = defineStore('posts', {
   }),
   actions: {
     async createPost(content: string) {
-      const authStore = useAuthStore()
-      const token = authStore.getToken
-
       const api = useApi()
 
-      const response = await api.post<Post>('/posts', { content, headers: { Authorization: `Bearer ${token}` } })
+      const response = await api.post<Post>('/posts', { content })
 
       this.posts.unshift(response.data)
       return response.data

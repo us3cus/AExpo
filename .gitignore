@@ -33,3 +33,5 @@ nginx.conf
 #VScode settings
 .vscode
 .vscode/*
+
+copilot-instructions.md

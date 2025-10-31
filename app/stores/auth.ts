@@ -48,52 +48,24 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async login(email: string, password: string) {
-      const response = await fetch('http://localhost:5001/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ email, password })
-      })
+      const api = useApi(false)
 
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || 'Ошибка при входе')
-      }
-
-      const data = await response.json()
+      const { data } = await api.post('/auth/login', { email, password })
       this.setToken(data.access_token)
 
       // Получаем профиль пользователя
-      const profileResponse = await fetch('http://localhost:5001/api/auth/profile', {
-        headers: {
-          'Authorization': `Bearer ${data.access_token}`
-        }
-      })
+      const apiWithAuth = useApi(true)
+      const profileResponse = await apiWithAuth.get('/auth/profile')
 
-      if (!profileResponse.ok) {
-        throw new Error('Ошибка при получении профиля')
-      }
+      this.setUser(profileResponse.data)
 
-      const profile = await profileResponse.json()
-      this.setUser(profile)
-
-      return profile
+      return profileResponse.data
     },
 
     async register(email: string, password: string, firstName: string, lastName: string) {
-      const response = await fetch('http://localhost:5001/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ email, password, firstName, lastName })
-      })
+      const api = useApi(false)
 
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || 'Ошибка при регистрации')
-      }
+      await api.post('/auth/register', { email, password, firstName, lastName })
 
       // После успешной регистрации выполняем автоматический вход
       return await this.login(email, password)
@@ -126,4 +98,4 @@ export const useAuthStore = defineStore('auth', {
       }
     }
   }
-}) 
+})

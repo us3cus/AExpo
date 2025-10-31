@@ -11,6 +11,7 @@ definePageMeta({
 
 const router = useRouter()
 const toast = useToast()
+const api = useApi(false)
 
 const email = ref('')
 const isLoading = ref(false)
@@ -19,18 +20,7 @@ const handleSubmit = async () => {
   try {
     isLoading.value = true
     
-    const response = await fetch('http://localhost:5001/api/auth/forgot-password', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ email: email.value })
-    })
-
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.message || 'Ошибка при отправке инструкций')
-    }
+    await api.post('/auth/forgot-password', { email: email.value })
 
     toast.add({
       title: 'Успешно',
@@ -38,12 +28,11 @@ const handleSubmit = async () => {
       color: 'success'
     })
 
-    // Перенаправляем на страницу входа
     await router.push('/auth/login')
   } catch (error: any) {
     toast.add({
       title: 'Ошибка',
-      description: error.message,
+      description: error.response?.data?.message || error.message || 'Произошла ошибка',
       color: 'error'
     })
   } finally {

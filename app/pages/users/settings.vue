@@ -67,31 +67,6 @@
             />
           </div>
 
-          <!-- Shikimori интеграция -->
-          <div class="space-y-2">
-            <div class="flex items-center justify-between">
-              <span class="text-sm font-medium">Shikimori</span>
-              <UButton
-                v-if="!user.shikimoriId"
-                color="primary"
-                variant="soft"
-                @click="connectShikimori"
-              >
-                Подключить
-              </UButton>
-              <div v-else class="flex items-center space-x-2">
-                <span class="text-sm text-gray-500">ID: {{ user.shikimoriId }}</span>
-                <UButton
-                  color="error"
-                  variant="soft"
-                  size="xs"
-                  @click="disconnectShikimori"
-                >
-                  Отключить
-                </UButton>
-              </div>
-            </div>
-          </div>
 
           <div class="flex justify-end">
             <UButton
@@ -113,12 +88,11 @@
 import { useAnimate } from '@vueuse/core'
 import { useColorMode } from '#imports'
 
-import { useAuthStore } from '~/stores/auth'
-const authStore = useAuthStore()
+const api = useApi()
 
 const colorMode = useColorMode()
 const parent = ref<HTMLElement | null>(null)
-const { play } = useAnimate(parent, {
+const _play = useAnimate(parent, {
   duration: 300,
   easing: 'ease-in-out'
 })
@@ -148,63 +122,20 @@ const toggleColorMode = () => {
   colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark'
 }
 
-// Подключение Shikimori
-const connectShikimori = () => {
-  window.location.href = 'http://localhost:5001/api/auth/shikimori/login'
-}
-
-// Отключение Shikimori
-const disconnectShikimori = async () => {
-  const token = authStore.token
-  try {
-    const response = await fetch('http://localhost:5001/api/auth/shikimori/disconnect', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    })
-    
-    if (!response.ok) throw new Error('Ошибка при отключении Shikimori')
-    
-    user.value.shikimoriId = ''
-    
-    useToast().add({
-      title: 'Успех',
-      description: 'Shikimori успешно отключен',
-      color: 'success'
-    })
-  } catch (error) {
-    useToast().add({
-      title: 'Ошибка',
-      description: 'Не удалось отключить Shikimori',
-      color: 'error'
-    })
-  }
-}
-
 // Загрузка данных пользователя
 const fetchUserData = async () => {
-  const token = authStore.token
   try {
-    const response = await fetch('http://localhost:5001/api/auth/me', {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    })
-    
-    if (!response.ok) throw new Error('Ошибка при загрузке данных пользователя')
-    
-    const data = await response.json()
+    const { data } = await api.get('users/me')
     user.value = data
     form.value = {
       firstName: data.firstName,
       lastName: data.lastName,
       password: ''
     }
-  } catch (error) {
+  } catch (error: any) {
     useToast().add({
       title: 'Ошибка',
-      description: 'Не удалось загрузить данные пользователя',
+      description: error.response?.data?.message || 'Не удалось загрузить данные пользователя',
       color: 'error'
     })
   }
@@ -212,21 +143,9 @@ const fetchUserData = async () => {
 
 // Обновление профиля
 const updateProfile = async () => {
-  const token = authStore.token
   loading.value = true
   try {
-    const response = await fetch('http://localhost:5001/api/auth/profile', {
-      method: 'PATCH',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(form.value)
-    })
-    
-    if (!response.ok) throw new Error('Ошибка при обновлении профиля')
-    
-    const data = await response.json()
+    const { data } = await api.patch('/auth/profile', form.value)
     user.value = data
     form.value.password = ''
     
@@ -235,10 +154,10 @@ const updateProfile = async () => {
       description: 'Профиль успешно обновлен',
       color: 'success'
     })
-  } catch (error) {
+  } catch (error: any) {
     useToast().add({
       title: 'Ошибка',
-      description: 'Не удалось обновить профиль',
+      description: error.response?.data?.message || 'Не удалось обновить профиль',
       color: 'error'
     })
   } finally {
@@ -252,7 +171,6 @@ const openFileInput = () => {
 }
 
 const handleAvatarUpload = async (event: Event) => {
-  const token = authStore.token // access_token должен быть в сторе
   const input = event.target as HTMLInputElement
   if (!input.files?.length) return
 
@@ -263,17 +181,11 @@ const handleAvatarUpload = async (event: Event) => {
   formData.append('file', file)
 
   try {
-    const response = await fetch('http://localhost:5001/api/upload/avatar', {
-      method: 'POST',
+    const { data } = await api.post('/upload/avatar', formData, {
       headers: {
-        Authorization: `Bearer ${token}`
-      },
-      body: formData
+        'Content-Type': 'multipart/form-data'
+      }
     })
-
-    if (!response.ok) throw new Error('Ошибка при загрузке аватара')
-
-    const data = await response.json()
     user.value.avatarUrl = data.url
 
     useToast().add({
@@ -281,10 +193,10 @@ const handleAvatarUpload = async (event: Event) => {
       description: 'Аватар успешно обновлен',
       color: 'success'
     })
-  } catch (error) {
+  } catch (error: any) {
     useToast().add({
       title: 'Ошибка',
-      description: 'Не удалось загрузить аватар',
+      description: error.response?.data?.message || 'Не удалось загрузить аватар',
       color: 'error'
     })
   }

@@ -34,12 +34,11 @@ const handleSubmit = async () => {
       color: 'success'
     })
 
-    // После успешной регистрации и входа перенаправляем на страницу заполнения профиля
     await router.push('/auth/complete-profile')
   } catch (error: any) {
     toast.add({
       title: 'Ошибка',
-      description: error.message,
+      description: error.response?.data?.message || error.message || 'Произошла ошибка',
       color: 'error'
     })
   } finally {
