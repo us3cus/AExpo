@@ -28,5 +28,8 @@ deploy.tar.gz
 .env
 .env.*
 !.env.example
-
 nginx.conf 
+
+#VScode settings
+.vscode
+.vscode/*
