@@ -6,8 +6,6 @@ interface User {
   username: string
   email: string
   avatar?: string
-  shikimori_id?: number
-  shikimori_username?: string
 }
 
 export const useAuth = () => {
