@@ -5,8 +5,10 @@ interface User {
   email: string
   firstName: string
   lastName: string
-  avatar?: string
   avatarUrl?: string
+  avatarMimeType?: string
+  shikimori_id?: number
+  shikimori_username?: string
   createdAt: string
   updatedAt: string
 }

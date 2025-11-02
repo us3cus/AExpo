@@ -24,10 +24,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
+      - name: Create .env file
+        run: |
+          echo "API_URL=${{ secrets.API_URL }}" > .env
+          echo ".env file created with API_URL"
+      
       - name: Build project for SSR
         run: npm run build
         env:
           NITRO_PRESET: node-server
+          API_URL: ${{ secrets.API_URL }}
       
       - name: Verify build output
         run: |
@@ -38,7 +44,7 @@ jobs:
       
       - name: Create deployment archive
         run: |
-          tar -czf deploy.tar.gz .output package.json package-lock.json ecosystem.config.cjs
+          tar -czf deploy.tar.gz .output .env package.json package-lock.json ecosystem.config.cjs
           echo "Archive created:"
           tar -tzf deploy.tar.gz | head -20
       
@@ -71,6 +77,14 @@ jobs:
             
             echo "Files extracted:"
             ls -la /var/www/temten.me/
+            
+            echo "Checking .env file..."
+            if [ -f "/var/www/temten.me/.env" ]; then
+              echo "✅ .env file found"
+              cat /var/www/temten.me/.env | sed 's/=.*/=***/' # Show env vars without values
+            else
+              echo "⚠️ .env file NOT found"
+            fi
             
             echo "Checking server entry point..."
             if [ -f "/var/www/temten.me/.output/server/index.mjs" ]; then

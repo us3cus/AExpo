@@ -22,10 +22,10 @@
           >
             Создать пост
           </UButton>
-          <NuxtLink to="/profile">
+          <NuxtLink to="/users/profile">
             <UAvatar
-              v-if="user?.avatar"
-              :src="user.avatar"
+              v-if="user?.avatarUrl"
+              :src="user.avatarUrl"
               size="md"
               :alt="user.firstName"
             />
