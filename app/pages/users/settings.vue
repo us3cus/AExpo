@@ -3,7 +3,15 @@
     <UCard>
       <template #header>
         <div class="flex justify-between items-center">
-          <h2 class="text-xl font-bold">Настройки профиля</h2>
+          <div class="flex items-center gap-2">
+            <UButton
+              icon="i-heroicons-arrow-left"
+              color="neutral"
+              variant="ghost"
+              @click="$router.push('/users/profile')"
+            />
+            <h2 class="text-xl font-bold">Настройки профиля</h2>
+          </div>
           <UButton
             v-if="isMounted"
             :icon="colorMode.value === 'dark' ? 'i-heroicons-moon' : 'i-heroicons-sun'"
@@ -23,10 +31,14 @@
               :src="user.avatarUrl"
               alt="Аватар"
               class="w-full h-full object-cover"
-            />
+            >
             <div v-else class="w-full h-full bg-gray-200 flex items-center justify-center">
               <UIcon name="i-heroicons-user" class="w-24 h-24 text-gray-400" />
             </div>
+          </div>
+          
+          <div v-if="user?.firstName || user?.lastName" class="text-center">
+            <p class="text-lg font-semibold">{{ user.firstName }} {{ user.lastName }}</p>
           </div>
           
           <UButton
@@ -43,11 +55,11 @@
             accept="image/*"
             class="hidden"
             @change="handleAvatarUpload"
-          />
+          >
         </div>
 
         <!-- Форма -->
-        <form @submit.prevent="updateProfile" class="space-y-4">
+        <form class="space-y-4" @submit.prevent="updateProfile">
           <div class="space-y-1">
             <label class="text-sm font-medium">Имя</label>
             <UInput v-model="form.firstName" placeholder="Введите имя" />
@@ -59,38 +71,23 @@
           </div>
 
           <div class="space-y-1">
-            <label class="text-sm font-medium">Новый пароль</label>
+            <label class="text-sm font-medium">Текущий пароль</label>
             <UInput
-              v-model="form.password"
+              v-model="form.currentPassword"
               type="password"
-              placeholder="Введите новый пароль"
+              placeholder="Введите текущий пароль для подтверждения"
+              required
             />
+            <p class="text-xs text-gray-500">Обязательное поле для любых изменений</p>
           </div>
 
-          <!-- Shikimori интеграция -->
-          <div class="space-y-2">
-            <div class="flex items-center justify-between">
-              <span class="text-sm font-medium">Shikimori</span>
-              <UButton
-                v-if="!user.shikimoriId"
-                color="primary"
-                variant="soft"
-                @click="connectShikimori"
-              >
-                Подключить
-              </UButton>
-              <div v-else class="flex items-center space-x-2">
-                <span class="text-sm text-gray-500">ID: {{ user.shikimoriId }}</span>
-                <UButton
-                  color="error"
-                  variant="soft"
-                  size="xs"
-                  @click="disconnectShikimori"
-                >
-                  Отключить
-                </UButton>
-              </div>
-            </div>
+          <div class="space-y-1">
+            <label class="text-sm font-medium">Новый пароль (необязательно)</label>
+            <UInput
+              v-model="form.newPassword"
+              type="password"
+              placeholder="Введите новый пароль, если хотите изменить"
+            />
           </div>
 
           <div class="flex justify-end">
@@ -113,12 +110,12 @@
 import { useAnimate } from '@vueuse/core'
 import { useColorMode } from '#imports'
 
-import { useAuthStore } from '~/stores/auth'
+const api = useApi()
 const authStore = useAuthStore()
 
 const colorMode = useColorMode()
 const parent = ref<HTMLElement | null>(null)
-const { play } = useAnimate(parent, {
+const _play = useAnimate(parent, {
   duration: 300,
   easing: 'ease-in-out'
 })
@@ -140,7 +137,14 @@ const user = ref({
 const form = ref({
   firstName: '',
   lastName: '',
-  password: ''
+  currentPassword: '',
+  newPassword: ''
+})
+
+// Храним исходные данные для сравнения
+const originalData = ref({
+  firstName: '',
+  lastName: ''
 })
 
 // Переключение темы
@@ -148,63 +152,30 @@ const toggleColorMode = () => {
   colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark'
 }
 
-// Подключение Shikimori
-const connectShikimori = () => {
-  window.location.href = 'http://localhost:5001/api/auth/shikimori/login'
-}
-
-// Отключение Shikimori
-const disconnectShikimori = async () => {
-  const token = authStore.token
-  try {
-    const response = await fetch('http://localhost:5001/api/auth/shikimori/disconnect', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    })
-    
-    if (!response.ok) throw new Error('Ошибка при отключении Shikimori')
-    
-    user.value.shikimoriId = ''
-    
-    useToast().add({
-      title: 'Успех',
-      description: 'Shikimori успешно отключен',
-      color: 'success'
-    })
-  } catch (error) {
-    useToast().add({
-      title: 'Ошибка',
-      description: 'Не удалось отключить Shikimori',
-      color: 'error'
-    })
-  }
-}
-
 // Загрузка данных пользователя
 const fetchUserData = async () => {
-  const token = authStore.token
   try {
-    const response = await fetch('http://localhost:5001/api/auth/me', {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    })
-    
-    if (!response.ok) throw new Error('Ошибка при загрузке данных пользователя')
-    
-    const data = await response.json()
+    const { data } = await api.get('users/me')
     user.value = data
-    form.value = {
-      firstName: data.firstName,
-      lastName: data.lastName,
-      password: ''
+    
+    // Сохраняем исходные данные
+    originalData.value = {
+      firstName: data.firstName || '',
+      lastName: data.lastName || ''
     }
-  } catch (error) {
+    
+    // Заполняем форму только именем и фамилией, пароли оставляем пустыми
+    form.value = {
+      firstName: data.firstName || '',
+      lastName: data.lastName || '',
+      currentPassword: '',
+      newPassword: ''
+    }
+  } catch (error: unknown) {
+    const err = error as { response?: { data?: { message?: string } }; message?: string }
     useToast().add({
       title: 'Ошибка',
-      description: 'Не удалось загрузить данные пользователя',
+      description: err.response?.data?.message || 'Не удалось загрузить данные пользователя',
       color: 'error'
     })
   }
@@ -212,33 +183,89 @@ const fetchUserData = async () => {
 
 // Обновление профиля
 const updateProfile = async () => {
-  const token = authStore.token
-  loading.value = true
-  try {
-    const response = await fetch('http://localhost:5001/api/auth/profile', {
-      method: 'PATCH',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(form.value)
-    })
-    
-    if (!response.ok) throw new Error('Ошибка при обновлении профиля')
-    
-    const data = await response.json()
-    user.value = data
-    form.value.password = ''
-    
+  // Проверяем, были ли изменения
+  const hasNameChanges = 
+    form.value.firstName !== originalData.value.firstName || 
+    form.value.lastName !== originalData.value.lastName
+  
+  const hasPasswordChange = form.value.newPassword && form.value.newPassword.trim() !== ''
+  
+  // Если нет изменений, не отправляем запрос
+  if (!hasNameChanges && !hasPasswordChange) {
     useToast().add({
-      title: 'Успех',
-      description: 'Профиль успешно обновлен',
-      color: 'success'
+      title: 'Информация',
+      description: 'Нет изменений для сохранения',
+      color: 'primary'
     })
-  } catch (error) {
+    return
+  }
+  
+  // Проверяем наличие текущего пароля (обязательное поле)
+  if (!form.value.currentPassword || form.value.currentPassword.trim() === '') {
     useToast().add({
       title: 'Ошибка',
-      description: 'Не удалось обновить профиль',
+      description: 'Введите текущий пароль для подтверждения изменений',
+      color: 'error'
+    })
+    return
+  }
+  
+  loading.value = true
+  try {
+    // Формируем данные для отправки
+    const updateData: Record<string, string> = {
+      currentPassword: form.value.currentPassword
+    }
+    
+    if (hasNameChanges) {
+      updateData.firstName = form.value.firstName
+      updateData.lastName = form.value.lastName
+    }
+    
+    if (hasPasswordChange) {
+      updateData.newPassword = form.value.newPassword
+    }
+    
+    const { data } = await api.patch('/auth/profile', updateData)
+    
+    // Если пароль был изменен, получим новый токен
+    if (data.access_token) {
+      // Сохраняем новый токен
+      authStore.setToken(data.access_token)
+      
+      useToast().add({
+        title: 'Успех',
+        description: 'Пароль изменен. Выполнен повторный вход с новым токеном.',
+        color: 'success'
+      })
+    } else {
+      useToast().add({
+        title: 'Успех',
+        description: 'Профиль успешно обновлен',
+        color: 'success'
+      })
+    }
+    
+    // Обновляем данные пользователя
+    if (data.user) {
+      user.value = data.user
+      
+      // Обновляем исходные данные после успешного сохранения
+      originalData.value = {
+        firstName: data.user.firstName || '',
+        lastName: data.user.lastName || ''
+      }
+    }
+    
+    // Очищаем поля паролей
+    form.value.currentPassword = ''
+    form.value.newPassword = ''
+    
+  } catch (error: unknown) {
+    const err = error as { response?: { data?: { message?: string } }; message?: string }
+    useToast().add({
+      title: 'Ошибка',
+      description: err.response?.data?.message || 'Не удалось обновить профиль',
       color: 'error'
     })
   } finally {
@@ -252,7 +279,6 @@ const openFileInput = () => {
 }
 
 const handleAvatarUpload = async (event: Event) => {
-  const token = authStore.token // access_token должен быть в сторе
   const input = event.target as HTMLInputElement
   if (!input.files?.length) return
 
@@ -263,17 +289,11 @@ const handleAvatarUpload = async (event: Event) => {
   formData.append('file', file)
 
   try {
-    const response = await fetch('http://localhost:5001/api/upload/avatar', {
-      method: 'POST',
+    const { data } = await api.post('/upload/avatar', formData, {
       headers: {
-        Authorization: `Bearer ${token}`
-      },
-      body: formData
+        'Content-Type': 'multipart/form-data'
+      }
     })
-
-    if (!response.ok) throw new Error('Ошибка при загрузке аватара')
-
-    const data = await response.json()
     user.value.avatarUrl = data.url
 
     useToast().add({
@@ -281,10 +301,11 @@ const handleAvatarUpload = async (event: Event) => {
       description: 'Аватар успешно обновлен',
       color: 'success'
     })
-  } catch (error) {
+  } catch (error: unknown) {
+    const err = error as { response?: { data?: { message?: string } }; message?: string }
     useToast().add({
       title: 'Ошибка',
-      description: 'Не удалось загрузить аватар',
+      description: err.response?.data?.message || 'Не удалось загрузить аватар',
       color: 'error'
     })
   }

@@ -1,3 +1,4 @@
+<!-- remake later, fix 404 error with obj.hasOwnProperty is not a function -->
 <template>
     <div class="container mx-auto p-4">
         <div class="flex justify-center gap-2 md:justify-start">
@@ -55,7 +56,7 @@
               <template #header>
                 <div class="text-center font-medium">Аниме в списке</div>
               </template>
-              <div class="text-center text-2xl font-bold">{{ user?.animeListCount || 0 }}</div>
+              <div class="text-center text-2xl font-bold">{{ user?.postCount || 0 }}</div>
             </UCard>
           </div>
   
@@ -68,7 +69,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute } from '#app'
-import { useAuthStore } from '~/stores/auth'
 
 interface User {
   avatarUrl?: string
@@ -79,37 +79,41 @@ interface User {
   followersCount: number
   followingCount: number
   animeListCount: number
+  postCount?: number
 }
 
 const route = useRoute()
-const authStore = useAuthStore()
+const api = useApi()
+const toast = useToast()
 
 const user = ref<User | null>(null)
 const loading = ref(true)
 
 const fetchUser = async () => {
   try {
+    loading.value = true
     const userId = route.params.id
 
-    if (!userId) throw new Error("ID пользователя отсутствует.")
+    if (!userId) {
+      throw new Error("ID пользователя отсутствует.")
+    }
 
-    const response = await fetch(`http://localhost:5001/api/users/${userId}`, {
-      headers: {
-        Authorization: `Bearer ${authStore.token}`
-      }
-    })
-
-    if (response.status === 404) {
+    const { data } = await api.get(`/users/${userId}`)
+    user.value = data
+  } catch (error: unknown) {
+    const err = error as { response?: { status?: number; data?: { message?: string } }; message?: string }
+    console.error("Ошибка при загрузке пользователя:", error)
+    
+    if (err.response?.status === 404) {
       navigateTo('/error')
       return
     }
 
-    if (!response.ok) throw new Error("Ошибка загрузки данных")
-
-    const result = await response.json()
-    user.value = result
-  } catch (error) {
-    console.error("Ошибка при загрузке пользователя:", error)
+    toast.add({
+      title: 'Ошибка',
+      description: err.response?.data?.message || err.message || 'Не удалось загрузить данные пользователя',
+      color: 'error'
+    })
   } finally {
     loading.value = false
   }

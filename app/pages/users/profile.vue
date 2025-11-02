@@ -67,9 +67,9 @@
             </UCard>
             <UCard>
               <template #header>
-                <div class="text-center font-medium">Аниме в списке</div>
+                <div class="text-center font-medium">Количество постов</div>
               </template>
-              <div class="text-center text-2xl font-bold">{{ user?.animeListCount || 0 }}</div>
+              <div class="text-center text-2xl font-bold">{{ user?.postCount || 0 }}</div>
             </UCard>
           </div>
   
@@ -83,37 +83,35 @@
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '~/stores/auth'
 import { useRouter } from '#app'
-import { useFetch } from '#app'
 
 const user = ref(null)
 const loading = ref(true)
 
 const authStore = useAuthStore()
 const router = useRouter()
+const toast = useToast()
+const api = useApi()
 
 const fetchUserData = async () => {
   try {
-    const token = authStore.token // access_token должен быть в сторе
-    const { data, error } = await useFetch('http://localhost:5001/api/users/me', {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
+    loading.value = true
+    const response = await api.get('/users/me')
+    user.value = response.data
+    console.log(response.data)
+  } catch (error: unknown) {
+    const err = error as { response?: { data?: { message?: string } }; message?: string }
+    console.error('Ошибка при загрузке данных:', error)
+    toast.add({
+      title: 'Ошибка',
+      description: err.response?.data?.message || err.message || 'Не удалось загрузить данные профиля',
+      color: 'error'
     })
-
-    if (error.value) {
-      console.error('Ошибка при загрузке данных:', error.value)
-    } else {
-      user.value = data.value
-      console.log(data.value);
-    }
-  } catch (e) {
-    console.error('Ошибка запроса:', e)
   } finally {
     loading.value = false
   }
 }
 
-const items = ref<DropdownMenuItem[]>([
+const items = ref([
   {
     label: 'Настройки',
     icon: 'i-lucide-cog',
